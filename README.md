@@ -16,8 +16,8 @@ The AI Call Tree Explorer is an automated system designed to discover and map ou
 
 1. Clone the repository:
    ```
-   git clone https://github.com/yourusername/ai-call-tree-explorer.git
-   cd ai-call-tree-explorer
+   git clone https://github.com/jkearney126/call-tree-explorer.git
+   cd call-tree-explorer
    ```
 
 2. Install the required dependencies:
