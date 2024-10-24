@@ -8,7 +8,7 @@ from typing import Dict
 import openai
 from pyngrok import ngrok
 from web_server import create_app, run_flask_app
-from config import API_TOKEN, OPENAI_API_KEY, TEST_PHONE_NUMBER, START_CALL_ENDPOINT, GET_RECORDING_ENDPOINT
+from config import API_TOKEN, OPENAI_API_KEY, TEST_PHONE_NUMBER, START_CALL_ENDPOINT, GET_RECORDING_ENDPOINT, USE_NGROK, WEBHOOK_URL
 from prompts import INITIAL_AGENT_PROMPT, DECISION_TREE_PROMPT, MERGE_TREES_PROMPT, generate_new_agent_prompt
 
 
@@ -25,19 +25,27 @@ class CallTreeExplorer:
         self.session.headers.update({'Authorization': f'Bearer {API_TOKEN}'})
         self.active_calls = {}
         self.conversation_tree = {}
-        self.ngrok_tunnel = self.create_ngrok_tunnel()
-        self.webhook_url = f"{self.ngrok_tunnel.public_url}/webhook"
+        self.webhook_url = self.setup_webhook_url()
         self.max_depth = 3
         openai.api_key = OPENAI_API_KEY
         self.call_recordings = []  # New attribute to store call recording URLs
 
+    def setup_webhook_url(self):
+        """
+        Sets up the webhook URL based on the configuration.
+        """
+        if USE_NGROK:
+            ngrok_tunnel = self.create_ngrok_tunnel()
+            return f"{ngrok_tunnel.public_url}/webhook"
+        else:
+            return WEBHOOK_URL
+
     def create_ngrok_tunnel(self):
         """
         Creates an ngrok tunnel to expose the local server.
-
-        Returns:
-            NgrokTunnel: The created ngrok tunnel.
         """
+        if not USE_NGROK:
+            return None
         try:
             # You may need to set your ngrok auth token here if you haven't done it before
             # ngrok.set_auth_token("YOUR_NGROK_AUTH_TOKEN")
@@ -338,7 +346,8 @@ def main():
     except KeyboardInterrupt:
         print("Shutting down...")
         explorer.print_summary()  # Print summary before shutting down
-        ngrok.kill()  # Make sure to kill the ngrok process on exit
+        if USE_NGROK:
+            ngrok.kill()  # Only kill ngrok if it's being used
 
 if __name__ == "__main__":
     main()
