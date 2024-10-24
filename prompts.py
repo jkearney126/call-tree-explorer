@@ -13,11 +13,12 @@ If any option is not explicitly covered in the conversation, fill it with "Unkno
 
 Ensure that for every question:
 - Both "Yes" and "No" branches (or other relevant alternatives) are explicitly included.
+- Avoid adding a third option if the question is binary (e.g., Yes/No).
 - The response branches should be filled with appropriate actions or placeholders ("Unknown") if the outcome is unclear or not specified.
-- Limit the number of branches. If the question asked is open ended, we likely don't need a branch. Focus on decision points.
-- Unknown can not be a key in the dictionary.
-- Check for redundancy
-- Do not make catch all nodes like "Other"
+- Limit the number of branches. If the question asked is open-ended, we likely don't need a branch. Focus on decision points.
+- Unknown cannot be a key in the dictionary.
+- Check for redundancy and ensure logical consistency.
+- Do not make catch-all nodes like "Other".
 
 Format the tree as a JSON object where:
 - Each key is a decision, question, or statement.

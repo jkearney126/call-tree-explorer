@@ -10,6 +10,7 @@ from pyngrok import ngrok
 from web_server import create_app, run_flask_app
 from config import API_TOKEN, OPENAI_API_KEY, TEST_PHONE_NUMBER, START_CALL_ENDPOINT, GET_RECORDING_ENDPOINT, USE_NGROK, WEBHOOK_URL
 from prompts import INITIAL_AGENT_PROMPT, DECISION_TREE_PROMPT, MERGE_TREES_PROMPT, generate_new_agent_prompt
+import argparse
 
 
 class CallTreeExplorer:
@@ -19,12 +20,12 @@ class CallTreeExplorer:
     Methods:
         start_exploration(): Starts the exploration process.
     """
-    def __init__(self, agent_prompt: str):
+    def __init__(self, agent_prompt: str, initial_tree: dict = None):
         self.agent_prompt = agent_prompt
         self.session = requests.Session()
         self.session.headers.update({'Authorization': f'Bearer {API_TOKEN}'})
         self.active_calls = {}
-        self.conversation_tree = {}
+        self.conversation_tree = initial_tree if initial_tree else {}
         self.webhook_url = self.setup_webhook_url()
         self.max_depth = 3
         openai.api_key = OPENAI_API_KEY
@@ -137,14 +138,14 @@ class CallTreeExplorer:
 
     def find_unknowns_in_tree(self, decision_tree, current_path=None):
         """
-        Recursively searches the decision tree for any nodes with the value 'Unknown'.
+        Recursively searches the decision tree for any nodes with the value 'Unknown' or null values.
         
         Args:
             decision_tree (dict): The decision tree represented as a nested dictionary.
             current_path (list): The path taken through the tree to reach the current node.
             
         Returns:
-            list: A list of paths where 'Unknown' is found. Each path is a list of keys leading to the 'Unknown' value.
+            list: A list of paths where 'Unknown' or null values are found. Each path is a list of keys leading to the 'Unknown' or null value.
         """
         if current_path is None:
             current_path = []
@@ -152,8 +153,8 @@ class CallTreeExplorer:
         unknown_paths = []
 
         for key, value in decision_tree.items():
-            # If the value is "Unknown", add the current path + key to the list of unknown paths
-            if value == "Unknown":
+            # If the value is "Unknown" or None, add the current path + key to the list of unknown paths
+            if value == "Unknown" or value is None:
                 unknown_paths.append(current_path + [key])
             # If the value is a dictionary, recursively search through it
             elif isinstance(value, dict):
@@ -240,19 +241,28 @@ class CallTreeExplorer:
             print(f"Error creating decision tree: {str(e)}")
             return {}
 
-    def save_decision_tree(self, decision_tree: dict):
+    def save_decision_tree(self, decision_tree: dict, call_id: str, transcript: str):
         """
-        Saves the decision tree to a file in the dt_json folder.
+        Saves the decision tree to a file in the dt_json folder, including the call ID and transcript.
 
         Args:
             decision_tree (dict): The decision tree to save.
+            call_id (str): The call ID.
+            transcript (str): The transcribed conversation.
         """
         # Create the dt_json folder if it doesn't exist
         os.makedirs('dt_json', exist_ok=True)
         
+        # Prepare the data to save
+        data_to_save = {
+            "call_id": call_id,
+            "transcript": transcript,
+            "decision_tree": decision_tree
+        }
+        
         filename = f"dt_json/decision_tree_{int(time.time())}.json"
         with open(filename, 'w') as f:
-            json.dump(decision_tree, f, indent=4)
+            json.dump(data_to_save, f, indent=4)
         print(f"Decision tree saved to {filename}")
 
     def call_agent_with_new_prompt(self, dt):
@@ -318,12 +328,48 @@ class CallTreeExplorer:
         print(json.dumps(self.conversation_tree, indent=2))
         print("=== End of Summary ===\n")
 
+        # Shut down the Flask server and exit the program
+        if USE_NGROK:
+            ngrok.kill()  # Only kill ngrok if it's being used
+        os._exit(0)  # Exit the program
+
+def load_existing_tree(file_path: str) -> dict:
+    """
+    Loads an existing decision tree from a JSON file.
+
+    Args:
+        file_path (str): The path to the JSON file containing the decision tree.
+
+    Returns:
+        dict: The loaded decision tree.
+    """
+    try:
+        with open(file_path, 'r') as f:
+            return json.load(f)
+    except Exception as e:
+        print(f"Error loading decision tree from {file_path}: {str(e)}")
+        return {}
+
 def main():
     """
     Main function to start the conversation exploration.
     """
+    parser = argparse.ArgumentParser(description="Start the Call Tree Explorer.")
+    parser.add_argument('--seed', type=str, help='Path to a JSON file to seed the initial decision tree.')
+    args = parser.parse_args()
+
+    initial_tree = {}
+    agent_prompt = INITIAL_AGENT_PROMPT
+    if args.seed:
+        print(f"Seeding with existing decision tree from {args.seed}")
+        initial_tree = load_existing_tree(args.seed)
+        if not initial_tree:
+            raise ValueError(f"Failed to load decision tree from {args.seed}. Exiting program.")
+        # Use the generated prompt if seeding
+        agent_prompt = generate_new_agent_prompt(initial_tree)
+
     global explorer
-    explorer = CallTreeExplorer(agent_prompt=INITIAL_AGENT_PROMPT)
+    explorer = CallTreeExplorer(agent_prompt=agent_prompt, initial_tree=initial_tree)
 
     # Create Flask app
     app = create_app(explorer)

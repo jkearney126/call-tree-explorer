@@ -46,6 +46,18 @@ The AI Call Tree Explorer is an automated system designed to discover and map ou
 
 4. To stop the exploration, use Ctrl+C. A summary of the exploration, including call recording URLs and the final decision tree, will be printed.
 
+### Seeding with an Existing Decision Tree
+
+You can seed the exploration with an existing decision tree by providing a JSON file using the `--seed` argument. This is useful for continuing previous explorations or testing with known data.
+
+Sometimes the decision tree will get stuck in a loop. If this happens, you can seed the exploration with a known good decision tree to continue the exploration.
+
+```
+python main.py --seed path/to/decision_tree.json
+```
+
+- `path/to/decision_tree.json`: Replace this with the path to your JSON file containing the initial decision tree.
+
 ## Configuration
 
 You can modify the following files to customize the behavior:
