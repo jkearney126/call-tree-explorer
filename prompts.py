@@ -32,13 +32,16 @@ Provide the decision tree as a valid JSON object.
 
 MERGE_TREES_PROMPT = """
 You are given two decision trees represented as Python dictionaries. 
+These are ai voice agent call trees.
 Your task is to merge them into a single decision tree. 
-The merged tree should contain all unique paths from both trees. 
+The merged tree should contain all unique paths from both trees. Making sure to optimize the tree for logical flow. 
 If a path exists in both trees, ensure that the merged tree reflects the most comprehensive version.
 Ensure we do not go backwards in information.
 Unknown can not be a key.
-
 check that our tree is split correctly. If there is a yes or no, there should not be a third node.
+We can remove or merge nodes only if they are redundant and it is logical to do so.
+
+
 
 Existing Tree:
 {existing_tree}

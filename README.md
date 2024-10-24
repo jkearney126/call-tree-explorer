@@ -88,5 +88,5 @@ By configuring these settings, you can easily switch between using Ngrok for loc
 
 ## Output
 
-- Decision trees are saved as JSON files in the `dt_json` folder
+- call ids, transcripts, and decision trees are saved as JSON files in the `data` folder
 - A summary of the exploration is printed at the end, including call recording URLs and the final decision tree

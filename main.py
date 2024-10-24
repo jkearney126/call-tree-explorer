@@ -8,7 +8,7 @@ from typing import Dict
 import openai
 from pyngrok import ngrok
 from web_server import create_app, run_flask_app
-from config import API_TOKEN, OPENAI_API_KEY, TEST_PHONE_NUMBER, START_CALL_ENDPOINT, GET_RECORDING_ENDPOINT, USE_NGROK, WEBHOOK_URL
+from config import API_TOKEN, OPENAI_API_KEY, TEST_PHONE_NUMBER, START_CALL_ENDPOINT, GET_RECORDING_ENDPOINT, USE_NGROK, WEBHOOK_URL, OPENAI_MODEL
 from prompts import INITIAL_AGENT_PROMPT, DECISION_TREE_PROMPT, MERGE_TREES_PROMPT, generate_new_agent_prompt
 import argparse
 
@@ -117,7 +117,7 @@ class CallTreeExplorer:
             audio_content = response.content
             transcript = self.transcribe_audio(audio_content)
             print(transcript)
-            dt = self.create_decision_tree(transcript)
+            dt = self.create_decision_tree(transcript, call_id)
             self.conversation_tree = self.merge_decision_trees_with_openai(self.conversation_tree, dt)
             print("Merged Decision Tree:")
             print(json.dumps(self.conversation_tree, indent=2))
@@ -189,7 +189,7 @@ class CallTreeExplorer:
         finally:
             os.remove('temp_audio.mp3')
 
-    def create_decision_tree(self, transcribed_text: str) -> dict:
+    def create_decision_tree(self, transcribed_text: str, call_id: str) -> dict:
         """
         Creates a decision tree from the transcribed text using OpenAI's GPT model.
 
@@ -204,7 +204,7 @@ class CallTreeExplorer:
             prompt = DECISION_TREE_PROMPT.format(transcribed_text=transcribed_text)
 
             response = client.chat.completions.create(
-                model="gpt-4o",
+                model=OPENAI_MODEL,  # Use the model from config
                 response_format={
                     "type": "json_object"
                 },
@@ -231,7 +231,7 @@ class CallTreeExplorer:
 
             decision_tree = remove_unknown_and_other_keys(decision_tree)
             # Save the decision tree
-            self.save_decision_tree(decision_tree)
+            self.save_decision_tree(decision_tree, call_id, transcribed_text)  # Pass call_id and transcribed_text
 
             return decision_tree
         except json.JSONDecodeError as e:
@@ -251,7 +251,7 @@ class CallTreeExplorer:
             transcript (str): The transcribed conversation.
         """
         # Create the dt_json folder if it doesn't exist
-        os.makedirs('dt_json', exist_ok=True)
+        os.makedirs('data', exist_ok=True)
         
         # Prepare the data to save
         data_to_save = {
@@ -260,7 +260,7 @@ class CallTreeExplorer:
             "decision_tree": decision_tree
         }
         
-        filename = f"dt_json/decision_tree_{int(time.time())}.json"
+        filename = f"data/call_{call_id}.json"
         with open(filename, 'w') as f:
             json.dump(data_to_save, f, indent=4)
         print(f"Decision tree saved to {filename}")
@@ -293,7 +293,7 @@ class CallTreeExplorer:
             prompt = MERGE_TREES_PROMPT.format(existing_tree=existing_tree, new_tree=new_tree)
 
             response = client.chat.completions.create(
-                model="gpt-4o",
+                model=OPENAI_MODEL,  # Use the model from config
                 response_format={
                     "type": "json_object"
                 },

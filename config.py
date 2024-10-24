@@ -16,3 +16,6 @@ USE_NGROK = True
 
 # Set this to your production webhook URL if not using ngrok
 WEBHOOK_URL = "https://your-production-url.com/webhook"
+
+# Set the OpenAI model
+OPENAI_MODEL = "gpt-4o"
