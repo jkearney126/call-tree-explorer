@@ -29,6 +29,22 @@ The AI Call Tree Explorer is an automated system designed to discover and map ou
    - `API_TOKEN`: Your API token for the call service
    - `OPENAI_API_KEY`: Your OpenAI API key
    - `TEST_PHONE_NUMBER`: The phone number to use for test calls
+   - `START_CALL_ENDPOINT`: The URL to start a call
+   - `GET_RECORDING_ENDPOINT`: The URL to get a recording
+
+### Optional Step to Set OpenAI Model in config.py
+
+You can set the OpenAI model to be used for generating decision trees in the `config.py` file. This allows you to customize the model based on your requirements.
+
+I tested with gpt-4o, but if you have access to o1-mini, it might be worth trying that for fun.
+
+1. Open the `config.py` file.
+2. Set the `OPENAI_MODEL` variable to the desired model name. For example:
+   ```python
+   OPENAI_MODEL = "gpt-3.5-turbo"
+   ```
+
+This will ensure that the specified model is used for generating decision trees during the exploration process.
 
 ## Usage
 
