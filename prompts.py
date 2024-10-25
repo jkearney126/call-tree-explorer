@@ -60,5 +60,5 @@ def generate_new_agent_prompt(decision_tree):
     - Make sure to not ask redundant questions or provide responses we already have information on.
     Decision Tree: {decision_tree}
 
-    Be polite and provide essential information as requested by the agent. If we are trying to trip up the voice agent by not providing information, do not provide the information. You may express frustration if appropriate, but remain respectful.
+    Be polite and provide essential information as requested by the agent. You may express frustration if appropriate, but remain respectful.
     """
